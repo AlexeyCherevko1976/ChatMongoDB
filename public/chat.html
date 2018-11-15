@@ -1,0 +1,271 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Chat</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Список пользователей</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+
+ <!--    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #messages { list-style-type: none; margin: 0; padding: 0; }
+      #messages li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #eee; }
+    </style> -->
+    
+
+
+  </head>
+  <body>
+<div id='html1'  name="html1" style='display: block' >
+
+   <h2>Вход</h2>
+    <form name="userForm" id="userForm">
+        <input type="hidden" name="id" id="id" value="0" />
+        <input type="hidden" name="valueId" id="valueId" value="0" />
+        <div class="form-group">
+            <label for="login">Логин:</label>
+            <input class="form-control" name="login" id="login"   placeholder="Логин" value='login1'/>
+        </div>
+        <div class="form-group">
+            <label for="password">Пароль:</label>
+            <input class="form-control" name="password" id="password" placeholder="Пароль" value='b123456'/>
+        </div>
+         <div><input type="checkbox" id="shest001" >Вход с регистрацией</div><!-- checked -->
+        <div class="panel-body">
+<!--             <button type="submit" class="btn btn-sm btn-primary">Вход</button> -->
+            <a id="enter" class="btn btn-sm btn-primary">Вход</a>
+            <a id="reset" class="btn btn-sm btn-primary">Сбросить</a>
+        </div>
+    </form>
+
+</div>   
+
+<div id='html2'  name="html2"  style='display: none' >
+  <!-- display: none -->
+
+    <div id='tableRecord'  name="tableRecord">      
+          <input   name="loginValue" id="loginValue" value="login1" /><!-- type="hidden" -->
+      <input type="hidden"  name="passwordValue" id="passwordValue" value="b123456" />
+    <table class="table table-condensed table-striped table-bordered">
+        <thead><tr><th>запись</th><th>пользователь</th></tr></thead>
+        <tbody>
+        </tbody>
+    </table>
+   </div>
+ 
+    <div>
+    <ul id="messages"></ul>
+    <form action="">
+      <input id="m" autocomplete="off" /><button>Send</button>
+    </form>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
+  </div>
+
+</div>
+<script type="text/javascript">
+  document.body.scrollTop = document.body.scrollHeight;
+</script>
+
+    <script>
+        console.log('index');
+        // Добавление пользователя
+        function CreateUser(userLogin, userPassword) {
+
+            $.ajax({
+                url: "createUser",
+                contentType: "application/json",
+                method: "POST",
+                data: JSON.stringify({
+                    login: userLogin,
+                    password: userPassword
+                }),
+                success: function (user) {
+                    /*for (key in user){
+                        console.log(key+' '+user[key]);
+                    }*/                   
+                    
+                    reset();
+                    if (user['_id']){
+                        console.log('Создан новый логин!')
+                        document.querySelector('#login').placeholder='Логин';
+                        document.querySelector('#password').placeholder='Пароль';
+      
+                    }
+                    $('#login').val('');
+                    $('#password').val('');
+                    if (!user['loginFill']){
+                                     
+                      document.querySelector('#login').placeholder='Введите логин';
+                    }else if(!user['loginLen']){
+                        document.querySelector('#login').placeholder='Логин короткий, меньше 3 символов';
+                    }else if(user['repeat']){
+                        document.querySelector('#login').placeholder='Такой логин уже существует!';
+                    } else{
+                        //$("table tbody").append(row(user));
+                         document.querySelector('#login').placeholder='Логин';
+                    } 
+//console.log("!user['passwordFill']="+!user['passwordFill']);
+                    if (!user['passwordFill']){                
+                      document.querySelector('#password').placeholder='Введите пароль';
+                    }else if(!user['passwordLen']){
+                        document.querySelector('#password').placeholder='Пароль короткий, меньше 6 символов';
+                    } else{
+                        //$("table tbody").append(row(user));
+                         document.querySelector('#password').placeholder='Пароль';
+                    } 
+                    
+                }
+            })
+        }
+
+
+        // Добавление пользователя
+        function IdenticUser(userLogin, userPassword) {
+            $('#login').val('');
+            $('#password').val('');
+            if (userLogin.length<3){                             
+              document.querySelector('#login').placeholder='Введите пароль не менее 3 символов!!'; return 0;
+            }
+            if (userPassword.length<4){                             
+              document.querySelector('#password').placeholder='Введите пароль не менее 6 символов!!'; return 0;
+            }                         
+            $.ajax({
+                url: "IdenticUser",
+                contentType: "application/json",
+                method: "POST",
+                data: JSON.stringify({
+                    login: userLogin,
+                    password: userPassword
+                }),
+                success: function (user) {
+                    console.log(user)
+                    reset();  
+                       $('#loginValue').val(user['login']);
+                       $('#passwordValue').val(user['password']);
+                       $("#html2").css({ 'display': "block" });
+                       $("#html1").css({ 'display': "none" });
+
+                        var block = document.getElementById("html2");
+                        block.scrollTop = 9999;
+                }
+            })
+        }
+
+  
+        // сброс формы
+        function reset() {
+            var form = document.forms["userForm"];
+            form.reset();
+            form.elements["id"].value = 0;
+        }
+  
+        // сброс значений формы
+        $("#reset").click(function (e) {
+  
+            e.preventDefault();
+            reset();
+        })
+  
+        // отправка формы
+        //$("form").submit(function (e) {
+        $("#enter").click(function (e) {
+            e.preventDefault();
+            //var check = this.elements["check"].checked;
+            //console.log(`check ${check}`)
+            var checked = document.querySelector('#shest001').checked;
+            //console.log(checked);
+            //var id = this.elements["id"].value;
+            var login = $('#login').val();
+            var password = $('#password').val();;
+            if (checked){
+              CreateUser(login, password); console.log('CreateUser');
+            }                
+            else{
+              IdenticUser(login, password); console.log('IdenticUser');
+            }
+                
+        });
+
+    </script>
+
+<script>
+  var socket = io();
+
+  $('form').submit(function(){
+    CreateRecord($('#m').val(), $('#loginValue').val(), $('#passwordValue').val(), o=>clin(o));
+
+    $('#m').val(''); 
+    return false;
+  });
+
+  function clin(vol){
+    socket.emit('chat message', vol);
+      
+  }
+
+
+  socket.on('chat message', function(msg){
+
+    if (msg!=''){
+      $("table tbody").append(row(msg));
+    }
+    
+    //$('#main').val(msg);
+  }); 
+
+GetRecords()
+
+function CreateRecord(userRecord, userLogin, userPassword, callback) {
+  if (userRecord=='') return 0  
+    $.ajax({
+        url: "createRecord",
+        contentType: "application/json",
+        method: "POST",
+        data: JSON.stringify({
+            record: userRecord,
+            login: userLogin,
+            password: userPassword
+        }),
+        success: function (user) {
+            //reset();
+            //$("table tbody").append(row(user));
+            callback(user)
+        }
+    })
+    
+}
+// Получение всех пользователей
+function GetRecords() {
+    $.ajax({
+        url: "/loadRecords",
+        type: "GET",
+        contentType: "application/json",
+        success: function (users) {
+            var rows = "";
+            $.each(users, function (index, user) {
+                // добавляем полученные элементы в таблицу
+                rows += row(user);
+            })
+          $("table tbody").append(rows);
+            //return  rows
+         }
+    });
+}
+
+
+
+// создание строки для таблицы
+var row = function (user) {
+   return "<tr data-rowid='" + user.id + "'><td>" + user.record + "</td>" +
+                   "<td>" + user.login + "</td> <tr>";
+}
+</script>
+  </body>
+</html>
